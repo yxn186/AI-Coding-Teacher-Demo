@@ -1,0 +1,23 @@
+﻿Original prompt: Build a directly runnable single-page HTML prototype for "积木小老师——面向儿童的 AI 编程启蒙伙伴" with real block dragging, AI guidance, speech synthesis, fake voice input, and two playable tasks.
+
+- Created initial static app structure in `index.html`, `style.css`, and `script.js`.
+- Implemented data-driven tasks, stage, AI panel, block pool, and program track layout.
+- Implemented pointer-based drag from pool to program and reorder inside program.
+- Implemented task evaluation, stage execution feedback, fake voice input, and speech synthesis fallback handling.
+- Verification is limited to static review because `node` and `npx` are unavailable in this environment.
+- Performed static review of the generated JS/CSS and fixed a speech toggle syntax issue.
+- Added small UI transitions for voice chips and stage feedback; no browser runtime verification was possible in this environment.
+- Reduced expensive visual effects to address page/control flicker: removed card backdrop blur, removed blurred background blobs, simplified star pulse, and replaced animated box-shadow pulse with a lighter outline animation.
+- Reworked speech output into a queued playback model so new prompts no longer cancel the current utterance.
+- Added a top-bar `跳过朗读` button that cancels the current utterance and immediately advances to the next queued line.
+- Added simple duplicate suppression for consecutive identical lines to avoid repeated stacking during rapid interactions.
+- Synced AI text with speech start instead of queue insertion, so queued lines no longer overwrite the visible text early.
+- Updated execution narration to await speech completion before advancing block highlight / stage feedback.
+- Context switches such as task changes and run start now clear previous queued speech so old narration does not overlap new execution.
+- Relaxed the run-step timing: user-triggered and visual feedback now starts immediately, while only the final success narration still blocks completion.
+- Cat task no longer waits through a pre-click narration; rabbit task now starts jumping immediately once the jump step begins instead of delaying each hop behind speech.
+- Error feedback also returns immediately instead of waiting for the correction sentence to finish.
+- Removed the stage actor's disabled-state gray-out by switching it to an `aria-disabled` / CSS lock style instead of native button disabling.
+- Tuned rabbit execution pacing: short setup beats, a small lead-in before jumping, and slower hop intervals so the narration has time to land.
+- Changed rabbit success flow from a fixed three-hop sequence to a persistent loop: one slower takeoff hop leads into an infinite jump animation that stays active until reset, rerun, or task switch.
+- Added a local top-left brand photo slot. The page now auto-loads `assets/brand/brand-photo.(png|jpg|jpeg|webp)` and falls back to the default emoji mark when no image is present.
