@@ -21,3 +21,6 @@
 - Tuned rabbit execution pacing: short setup beats, a small lead-in before jumping, and slower hop intervals so the narration has time to land.
 - Changed rabbit success flow from a fixed three-hop sequence to a persistent loop: one slower takeoff hop leads into an infinite jump animation that stays active until reset, rerun, or task switch.
 - Added a local top-left brand photo slot. The page now auto-loads `assets/brand/brand-photo.(png|jpg|jpeg|webp)` and falls back to the default emoji mark when no image is present.
+- Rebuilt the prototype toward a data-driven V2: 8 tasks + free lab, actor tabs with three trigger slots, preset microphone prompts, and a shared runtime for motion/speech/look/message blocks.
+- Refactored the monolithic runtime into classic multi-file scripts (`config/state/render/speech/api/runtime/drag/bootstrap`), added versioned localStorage persistence, a status strip, a collapsible debug log panel, a mock adapter boundary for future DeepSeek/豆包 access, and keyboard/touch accessibility improvements while preserving direct-open local execution.
+- Tightened post-refactor stability details: debug logs now render via text nodes instead of raw `innerHTML`, persisted block params are sanitized during hydration, and task/scene/run/reset actions now actively clear stale error state from the status strip.

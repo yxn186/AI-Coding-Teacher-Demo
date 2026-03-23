@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="sr-only">
+    <div id="live-polite" aria-live="polite" aria-atomic="true"></div>
+    <div id="live-assertive" aria-live="assertive" aria-atomic="true"></div>
+  </div>
+
   <div class="page-shell">
     <header class="top-bar card">
       <div class="brand">
@@ -28,12 +33,43 @@
           <span aria-hidden="true">⏭</span>
           <span>跳过朗读</span>
         </button>
-        <button id="sound-toggle-btn" class="icon-button ghost" type="button" aria-label="切换声音">
+        <button id="stop-btn" class="icon-button ghost warn" type="button" aria-label="停止当前运行">
+          <span aria-hidden="true">⏹</span>
+          <span>停止</span>
+        </button>
+        <button
+          id="sound-toggle-btn"
+          class="icon-button ghost"
+          type="button"
+          aria-label="切换声音"
+          aria-pressed="false"
+        >
           <span id="sound-toggle-icon" aria-hidden="true">🔈</span>
           <span id="sound-toggle-text">有声音</span>
         </button>
       </div>
     </header>
+
+    <section id="status-strip" class="status-strip card" role="status" aria-live="polite" aria-atomic="true">
+      <div class="status-main">
+        <span id="status-kind" class="status-kind status-idle">本地原型</span>
+        <p id="status-text" class="status-text">本地原型已准备好。</p>
+      </div>
+      <div class="status-meta">
+        <span id="provider-status" class="status-chip">适配器：mock</span>
+        <span id="runtime-status" class="status-chip">未运行</span>
+        <span id="save-status" class="status-chip">未保存</span>
+        <button
+          id="debug-toggle-btn"
+          class="pill-button ghost"
+          type="button"
+          aria-expanded="false"
+          aria-controls="debug-panel"
+        >
+          调试面板
+        </button>
+      </div>
+    </section>
 
     <main class="main-grid">
       <section class="task-panel card">
@@ -46,32 +82,45 @@
         <div class="voice-panel">
           <div class="panel-head small">
             <h3>说一说</h3>
-            <button id="voice-toggle-btn" class="round-icon" type="button" aria-label="打开语音示例">
+            <button
+              id="voice-toggle-btn"
+              class="round-icon"
+              type="button"
+              aria-label="打开语音示例"
+              aria-expanded="false"
+              aria-controls="voice-samples"
+            >
               🎤
             </button>
           </div>
           <div id="voice-user-bubble" class="voice-user-bubble" aria-live="polite"></div>
-          <div id="voice-samples" class="voice-samples" aria-label="示例语音指令"></div>
+          <div id="voice-samples" class="voice-samples" aria-label="预置语音指令"></div>
         </div>
       </section>
 
       <section class="stage-panel card">
         <div class="panel-head">
           <h2>舞台</h2>
-          <span id="stage-badge" class="panel-badge">小猫</span>
+          <div class="stage-badges">
+            <span id="task-badge" class="panel-badge">任务</span>
+            <span id="scene-badge" class="panel-badge soft">草地</span>
+          </div>
         </div>
-        <div id="stage-world" class="stage-world cat-theme">
+
+        <div id="stage-world" class="stage-world scene-meadow">
           <div class="stage-deco deco-star star-a" aria-hidden="true">✦</div>
           <div class="stage-deco deco-star star-b" aria-hidden="true">✦</div>
+          <div class="stage-deco deco-star star-c" aria-hidden="true">✦</div>
           <div class="stage-deco deco-cloud cloud-a" aria-hidden="true"></div>
           <div class="stage-deco deco-cloud cloud-b" aria-hidden="true"></div>
-          <div id="stage-bubble" class="stage-bubble" aria-live="polite"></div>
-          <button id="stage-actor" class="stage-actor" type="button" aria-label="舞台角色">
-            <span class="actor-shadow" aria-hidden="true"></span>
-            <span id="actor-core" class="actor-core" aria-hidden="true">🐱</span>
-          </button>
+          <div id="stage-hint" class="stage-hint" aria-live="polite"></div>
+          <div id="stage-actors" class="stage-actors" aria-label="舞台角色"></div>
           <div class="stage-ground" aria-hidden="true"></div>
-          <div id="stage-guide" class="stage-guide" aria-live="polite"></div>
+        </div>
+
+        <div class="scene-switch">
+          <span class="scene-title">场景</span>
+          <div id="scene-chips" class="scene-chips" aria-label="场景切换"></div>
         </div>
       </section>
 
@@ -83,19 +132,18 @@
           </button>
         </div>
         <div class="ai-card">
-          <div class="ai-avatar" aria-hidden="true">
-            <span>🤖</span>
-          </div>
+          <div class="ai-avatar" aria-hidden="true">🤖</div>
           <div class="ai-body">
             <p class="ai-name">积木老师</p>
             <p id="ai-message" class="ai-message" aria-live="polite"></p>
           </div>
         </div>
         <div class="ai-moods" aria-hidden="true">
-          <span class="mood-chip">温柔提示</span>
+          <span id="ai-mood-chip" class="mood-chip active">温柔提示</span>
           <span class="mood-chip">会鼓励</span>
           <span class="mood-chip">会纠错</span>
         </div>
+        <div id="ai-suggestion" class="ai-suggestion"></div>
       </aside>
     </main>
 
@@ -106,6 +154,7 @@
             <h2>积木池</h2>
             <span class="panel-badge">拖一拖</span>
           </div>
+          <div id="trigger-strip" class="trigger-strip" aria-label="触发方式"></div>
           <div id="block-pool" class="block-pool" aria-label="可用积木"></div>
         </div>
 
@@ -117,16 +166,38 @@
               <button id="run-btn" class="pill-button primary" type="button">运行</button>
             </div>
           </div>
-          <div id="program-track" class="program-track" aria-label="程序轨道">
-            <div id="program-list" class="program-list"></div>
-          </div>
+
+          <div id="actor-tabs" class="actor-tabs" role="tablist" aria-label="角色脚本"></div>
+          <div id="script-slots" class="script-slots" aria-label="脚本槽"></div>
         </div>
       </div>
     </section>
+
+    <section id="debug-panel" class="debug-panel card" hidden aria-label="调试日志面板">
+      <div class="panel-head">
+        <h2>调试日志</h2>
+        <div class="debug-controls">
+          <label class="debug-inline">
+            <span>Mock 延迟</span>
+            <select id="debug-delay-select" class="debug-select" aria-label="Mock 延迟"></select>
+          </label>
+          <button id="debug-fail-btn" class="pill-button ghost" type="button">下次 API 失败</button>
+          <button id="debug-clear-logs-btn" class="pill-button ghost" type="button">清空日志</button>
+          <button id="debug-clear-storage-btn" class="pill-button ghost warn" type="button">清空本地存档</button>
+        </div>
+      </div>
+      <div id="debug-summary" class="debug-summary" aria-live="polite"></div>
+      <div id="debug-log-list" class="debug-log-list" role="log" aria-live="polite"></div>
+    </section>
   </div>
 
-  <script src="script.js"></script>
+  <script src="config.js"></script>
+  <script src="state.js"></script>
+  <script src="render.js"></script>
+  <script src="speech.js"></script>
+  <script src="api.js"></script>
+  <script src="runtime.js"></script>
+  <script src="drag.js"></script>
+  <script src="bootstrap.js"></script>
 </body>
 </html>
-
-
