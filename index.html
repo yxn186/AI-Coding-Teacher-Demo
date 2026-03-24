@@ -17,7 +17,7 @@
       <div class="brand">
         <div class="brand-mark" aria-label="品牌图标">
           <img id="brand-photo" class="brand-photo" alt="左上角照片图标" hidden>
-          <span id="brand-fallback" class="brand-fallback" aria-hidden="true">🤖✨🧱</span>
+          <span id="brand-fallback" class="brand-fallback" aria-hidden="true">🧩</span>
         </div>
         <div>
           <h1>积木小老师</h1>
@@ -26,16 +26,16 @@
       </div>
       <div class="top-actions">
         <button id="read-task-btn" class="icon-button primary" type="button" aria-label="朗读当前任务">
-          <span aria-hidden="true">🔊</span>
-          <span>朗读任务</span>
+          <span class="button-icon control-icon" aria-hidden="true">📖</span>
+          <span class="button-label">朗读</span>
         </button>
         <button id="skip-speech-btn" class="icon-button ghost" type="button" aria-label="跳过当前朗读">
-          <span aria-hidden="true">⏭</span>
-          <span>跳过朗读</span>
+          <span class="button-icon control-icon" aria-hidden="true">⏭️</span>
+          <span class="button-label">跳过</span>
         </button>
         <button id="stop-btn" class="icon-button ghost warn" type="button" aria-label="停止当前运行">
-          <span aria-hidden="true">⏹</span>
-          <span>停止</span>
+          <span class="button-icon control-icon" aria-hidden="true">⏹️</span>
+          <span class="button-label">停下</span>
         </button>
         <button
           id="sound-toggle-btn"
@@ -44,8 +44,8 @@
           aria-label="切换声音"
           aria-pressed="false"
         >
-          <span id="sound-toggle-icon" aria-hidden="true">🔈</span>
-          <span id="sound-toggle-text">有声音</span>
+          <span id="sound-toggle-icon" class="button-icon control-icon" aria-hidden="true">🔊</span>
+          <span id="sound-toggle-text" class="button-label">有声</span>
         </button>
       </div>
     </header>
@@ -66,7 +66,8 @@
           aria-expanded="false"
           aria-controls="debug-panel"
         >
-          调试面板
+          <span id="debug-toggle-icon" class="button-icon control-icon" aria-hidden="true">🛠️</span>
+          <span id="debug-toggle-text" class="button-label">调试</span>
         </button>
       </div>
     </section>
@@ -90,7 +91,7 @@
               aria-expanded="false"
               aria-controls="voice-samples"
             >
-              🎤
+              <span class="button-icon control-icon" aria-hidden="true">🎤</span>
             </button>
           </div>
           <div id="voice-user-bubble" class="voice-user-bubble" aria-live="polite"></div>
@@ -108,9 +109,9 @@
         </div>
 
         <div id="stage-world" class="stage-world scene-meadow">
-          <div class="stage-deco deco-star star-a" aria-hidden="true">✦</div>
-          <div class="stage-deco deco-star star-b" aria-hidden="true">✦</div>
-          <div class="stage-deco deco-star star-c" aria-hidden="true">✦</div>
+          <div class="stage-deco deco-star star-a" aria-hidden="true">⭐</div>
+          <div class="stage-deco deco-star star-b" aria-hidden="true">⭐</div>
+          <div class="stage-deco deco-star star-c" aria-hidden="true">⭐</div>
           <div class="stage-deco deco-cloud cloud-a" aria-hidden="true"></div>
           <div class="stage-deco deco-cloud cloud-b" aria-hidden="true"></div>
           <div id="stage-hint" class="stage-hint" aria-live="polite"></div>
@@ -128,11 +129,11 @@
         <div class="panel-head">
           <h2>小老师</h2>
           <button id="read-ai-btn" class="round-icon" type="button" aria-label="再次朗读提示">
-            🔊
+            <span class="button-icon control-icon" aria-hidden="true">🔊</span>
           </button>
         </div>
         <div class="ai-card">
-          <div class="ai-avatar" aria-hidden="true">🤖</div>
+          <div id="ai-avatar" class="ai-avatar" aria-hidden="true">👩‍🏫</div>
           <div class="ai-body">
             <p class="ai-name">积木老师</p>
             <p id="ai-message" class="ai-message" aria-live="polite"></p>
@@ -162,8 +163,14 @@
           <div class="panel-head">
             <h2>程序区</h2>
             <div class="program-actions">
-              <button id="reset-btn" class="pill-button ghost" type="button">重置</button>
-              <button id="run-btn" class="pill-button primary" type="button">运行</button>
+              <button id="reset-btn" class="pill-button ghost" type="button">
+                <span class="button-icon control-icon" aria-hidden="true">🔄</span>
+                <span class="button-label">重来</span>
+              </button>
+              <button id="run-btn" class="pill-button primary" type="button">
+                <span class="button-icon control-icon" aria-hidden="true">▶️</span>
+                <span class="button-label">开始</span>
+              </button>
             </div>
           </div>
 

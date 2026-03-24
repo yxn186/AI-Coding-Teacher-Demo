@@ -20,14 +20,14 @@
   ];
   const FACES = ["开心", "惊讶", "眨眼", "酷酷"];
   const SLOTS = [
-    { id: "start", blockId: "start", label: "开始时", icon: "🚀", tip: "点运行就开始" },
-    { id: "click", blockId: "clickCharacter", label: "点角色时", icon: "👆", tip: "点它才开始" },
-    { id: "message", blockId: "receiveMessage", label: "收到消息", icon: "📨", tip: "听到消息就动" },
+    { id: "start", blockId: "start", label: "开始时", emoji: "▶️", tip: "点运行就开始" },
+    { id: "click", blockId: "clickCharacter", label: "点角色时", emoji: "👆", tip: "点它才开始" },
+    { id: "message", blockId: "receiveMessage", label: "收到消息", emoji: "📬", tip: "听到消息就动" },
   ];
   const ACTORS = {
-    cat: { id: "cat", name: "小猫", emoji: "🐱", left: "22%", bottom: 76, face: "开心" },
-    rabbit: { id: "rabbit", name: "小兔", emoji: "🐰", left: "50%", bottom: 88, face: "惊讶" },
-    dog: { id: "dog", name: "小狗", emoji: "🐶", left: "78%", bottom: 74, face: "酷酷" },
+    cat: { id: "cat", name: "小猫", emoji: "🐱", imageSrc: "assets/characters/cat.jpg", left: "22%", bottom: 76, face: "开心" },
+    rabbit: { id: "rabbit", name: "小兔", emoji: "🐰", imageSrc: "assets/characters/rabbit.jpg", left: "50%", bottom: 88, face: "惊讶" },
+    dog: { id: "dog", name: "小狗", emoji: "🐶", imageSrc: "assets/characters/dog.jpg", left: "78%", bottom: 74, face: "酷酷" },
   };
   const SCENES = {
     meadow: { id: "meadow", name: "草地", className: "scene-meadow" },
@@ -35,24 +35,24 @@
     space: { id: "space", name: "太空", className: "scene-space" },
   };
   const BLOCKS = {
-    start: { label: "开始时", icon: "🚀", kind: "trigger", colorClass: "block-trigger", subText: "点运行就开始" },
-    clickCharacter: { label: "点角色时", icon: "👆", kind: "trigger", colorClass: "block-trigger", subText: "点它才开始" },
-    receiveMessage: { label: "收到消息", icon: "📨", kind: "trigger", colorClass: "block-trigger", subText: "听到消息就动" },
-    wait: { label: "等待", icon: "⏳", kind: "control", colorClass: "block-control", subText: "等一下", paramType: "wait" },
-    repeatThree: { label: "重复3次", icon: "🔁", kind: "control", colorClass: "block-control", subText: "后面做三次", badge: "×3" },
-    forever: { label: "一直重复", icon: "♾️", kind: "control", colorClass: "block-control", subText: "不停地做", badge: "∞" },
-    sendMessage: { label: "发送消息", icon: "📣", kind: "control", colorClass: "block-control", subText: "喊一句消息", paramType: "message" },
-    sayHello: { label: "说你好", icon: "💬", kind: "speech", colorClass: "block-speech", subText: "开口打招呼" },
-    sayGreat: { label: "说太棒了", icon: "🌟", kind: "speech", colorClass: "block-speech", subText: "开心夸一夸" },
-    sayPlay: { label: "说一起玩", icon: "🎉", kind: "speech", colorClass: "block-speech", subText: "邀请朋友玩" },
-    moveForward: { label: "向前走", icon: "👣", kind: "motion", colorClass: "block-motion", subText: "往前一点点" },
-    hopOnce: { label: "跳一下", icon: "🦘", kind: "motion", colorClass: "block-motion", subText: "蹦起来" },
-    backCenter: { label: "回到中间", icon: "🎯", kind: "motion", colorClass: "block-motion", subText: "回到起点" },
-    spinAround: { label: "转一转", icon: "🌀", kind: "motion", colorClass: "block-motion", subText: "转个圈圈" },
-    grow: { label: "变大", icon: "📈", kind: "looks", colorClass: "block-looks", subText: "大一点" },
-    shrink: { label: "变小", icon: "📉", kind: "looks", colorClass: "block-looks", subText: "小一点" },
-    changeFace: { label: "换表情", icon: "😄", kind: "looks", colorClass: "block-looks", subText: "变个表情", paramType: "face" },
-    blink: { label: "闪一闪", icon: "✨", kind: "looks", colorClass: "block-looks", subText: "亮一下" },
+    start: { label: "开始时", emoji: "▶️", kind: "trigger", colorClass: "block-trigger", subText: "点运行就开始" },
+    clickCharacter: { label: "点角色时", emoji: "👆", kind: "trigger", colorClass: "block-trigger", subText: "点它才开始" },
+    receiveMessage: { label: "收到消息", emoji: "📬", kind: "trigger", colorClass: "block-trigger", subText: "听到消息就动" },
+    wait: { label: "等待", emoji: "⏳", kind: "control", colorClass: "block-control", subText: "等一下", paramType: "wait" },
+    repeatThree: { label: "重复3次", emoji: "🔁", kind: "control", colorClass: "block-control", subText: "后面做三次", badge: "×3" },
+    forever: { label: "一直重复", emoji: "🔄", kind: "control", colorClass: "block-control", subText: "不停地做", badge: "∞" },
+    sendMessage: { label: "发消息", emoji: "📣", kind: "control", colorClass: "block-control", subText: "传一句话", paramType: "message" },
+    sayHello: { label: "说你好", displayLabel: "说话", tagText: "你好", emoji: "💬", kind: "speech", colorClass: "block-speech", subText: "会朗读" },
+    sayGreat: { label: "说太棒了", displayLabel: "说话", tagText: "太棒", emoji: "💬", kind: "speech", colorClass: "block-speech", subText: "会朗读" },
+    sayPlay: { label: "说一起玩", displayLabel: "说话", tagText: "一起玩", emoji: "💬", kind: "speech", colorClass: "block-speech", subText: "会朗读" },
+    moveForward: { label: "向前走", emoji: "➡️", kind: "motion", colorClass: "block-motion", subText: "往前一点点" },
+    hopOnce: { label: "跳一下", emoji: "⬆️", kind: "motion", colorClass: "block-motion", subText: "蹦起来" },
+    backCenter: { label: "回到中间", emoji: "🎯", kind: "motion", colorClass: "block-motion", subText: "回到起点" },
+    spinAround: { label: "转一转", emoji: "🔄", kind: "motion", colorClass: "block-motion", subText: "转个圈圈" },
+    grow: { label: "变大", emoji: "🔍", kind: "looks", colorClass: "block-looks", subText: "大一点" },
+    shrink: { label: "变小", emoji: "🔎", kind: "looks", colorClass: "block-looks", subText: "小一点" },
+    changeFace: { label: "换表情", emoji: "🙂", kind: "looks", colorClass: "block-looks", subText: "变个表情", paramType: "face" },
+    blink: { label: "闪一闪", emoji: "✨", kind: "looks", colorClass: "block-looks", subText: "亮一下" },
   };
   const NON_TRIGGERS = Object.keys(BLOCKS).filter(function filterNonTrigger(id) {
     return BLOCKS[id].kind !== "trigger";
@@ -63,7 +63,8 @@
     task1: {
       id: "task1",
       type: "task",
-      icon: "🐱",
+      emoji: "🐱",
+      imageSrc: "assets/tasks/task-cat-hello.jpg",
       title: "点击小猫说你好",
       shortTitle: "小猫打招呼",
       sceneId: "classroom",
@@ -102,7 +103,8 @@
     task2: {
       id: "task2",
       type: "task",
-      icon: "🐰",
+      emoji: "🐰",
+      imageSrc: "assets/tasks/task-rabbit-jump.jpg",
       title: "小兔开始时一直跳",
       shortTitle: "小兔一直跳",
       sceneId: "meadow",
@@ -131,7 +133,8 @@
     task3: {
       id: "task3",
       type: "task",
-      icon: "🐶",
+      emoji: "🐶",
+      imageSrc: "assets/tasks/task-dog-walk.jpg",
       title: "小狗开始时向前走",
       shortTitle: "小狗往前走",
       sceneId: "meadow",
@@ -157,7 +160,8 @@
     task4: {
       id: "task4",
       type: "task",
-      icon: "⏳",
+      emoji: "⏳",
+      imageSrc: "assets/tasks/task-cat-wait.jpg",
       title: "小猫等待一下再夸奖",
       shortTitle: "小猫等一下",
       sceneId: "classroom",
@@ -186,7 +190,8 @@
     task5: {
       id: "task5",
       type: "task",
-      icon: "🔁",
+      emoji: "🔁",
+      imageSrc: "assets/tasks/task-rabbit-jump3.jpg",
       title: "小兔重复3次跳一下",
       shortTitle: "小兔跳三次",
       sceneId: "meadow",
@@ -215,7 +220,8 @@
     task6: {
       id: "task6",
       type: "task",
-      icon: "😄",
+      emoji: "🐶",
+      imageSrc: "assets/tasks/task-dog-grow-face.jpg",
       title: "点小狗变大再换表情",
       shortTitle: "小狗变大变脸",
       sceneId: "classroom",
@@ -253,7 +259,8 @@
     task7: {
       id: "task7",
       type: "task",
-      icon: "📣",
+      emoji: "📨",
+      imageSrc: "assets/tasks/task-message-hello.jpg",
       title: "小猫叫小狗来打招呼",
       shortTitle: "消息打招呼",
       sceneId: "classroom",
@@ -307,7 +314,8 @@
     task8: {
       id: "task8",
       type: "task",
-      icon: "🌌",
+      emoji: "🎭",
+      imageSrc: "assets/tasks/task-relay-show.jpg",
       title: "三角色接力表演",
       shortTitle: "接力表演",
       sceneId: "space",
@@ -378,7 +386,8 @@
     freeLab: {
       id: "freeLab",
       type: "free",
-      icon: "🧪",
+      emoji: "🧪",
+      imageSrc: "assets/tasks/task-free-lab.jpg",
       title: "自由实验室",
       shortTitle: "自由实验室",
       sceneId: "meadow",
@@ -393,18 +402,45 @@
   };
 
   const PROMPTS = [
-    { id: "p1", label: "让小猫说你好", taskId: "task1", actorId: "cat", blocks: ["sayHello"], reply: "我听懂啦，你想让小猫说你好。看看小猫的点角色时吧。" },
-    { id: "p2", label: "让小兔一直跳", taskId: "task2", actorId: "rabbit", blocks: ["forever", "hopOnce"], reply: "我听懂啦，你想让小兔一直跳。先看小兔的开始时。" },
-    { id: "p3", label: "让小狗往前走", taskId: "task3", actorId: "dog", blocks: ["moveForward"], reply: "我听懂啦，你想让小狗往前走。" },
-    { id: "p4", label: "让小猫等一下再夸奖", taskId: "task4", actorId: "cat", blocks: ["wait", "sayGreat"], reply: "我听懂啦，你想让小猫先等等，再夸奖。" },
-    { id: "p5", label: "让小兔跳三次", taskId: "task5", actorId: "rabbit", blocks: ["repeatThree", "hopOnce"], reply: "我听懂啦，你想让小兔跳三次。" },
-    { id: "p6", label: "点小狗变大变脸", taskId: "task6", actorId: "dog", blocks: ["grow", "changeFace"], reply: "我听懂啦，你想点小狗让它变大又变脸。" },
-    { id: "p7", label: "让小猫叫小狗打招呼", taskId: "task7", actorId: "cat", blocks: ["sendMessage", "sayHello"], reply: "我听懂啦，你想让小猫叫小狗打招呼。" },
-    { id: "p8", label: "让大家接力表演", taskId: "task8", actorId: "cat", blocks: ["sendMessage", "changeFace", "hopOnce"], reply: "我听懂啦，你想让大家接力表演。" },
-    { id: "pf1", label: "我想自由搭积木", taskId: "freeLab", actorId: "cat", blocks: ["sendMessage", "hopOnce", "blink"], reply: "我听懂啦，你想自由搭积木。" },
-    { id: "pf2", label: "让大家一起动", taskId: "freeLab", actorId: "cat", sceneId: "space", blocks: ["sendMessage", "hopOnce", "changeFace"], reply: "我听懂啦，你想让大家一起动。" },
-    { id: "pf3", label: "让小狗变大", taskId: "freeLab", actorId: "dog", blocks: ["grow", "sayGreat"], reply: "我听懂啦，你想让小狗变大。" },
+    { id: "p1", label: "让小猫说你好", emoji: "🐱", taskId: "task1", actorId: "cat", blocks: ["sayHello"], reply: "我听懂啦，你想让小猫说你好。看看小猫的点角色时吧。" },
+    { id: "p2", label: "让小兔一直跳", emoji: "🐰", taskId: "task2", actorId: "rabbit", blocks: ["forever", "hopOnce"], reply: "我听懂啦，你想让小兔一直跳。先看小兔的开始时。" },
+    { id: "p3", label: "让小狗往前走", emoji: "🐶", taskId: "task3", actorId: "dog", blocks: ["moveForward"], reply: "我听懂啦，你想让小狗往前走。" },
+    { id: "p4", label: "让小猫等一下再夸奖", emoji: "⏳", taskId: "task4", actorId: "cat", blocks: ["wait", "sayGreat"], reply: "我听懂啦，你想让小猫先等等，再夸奖。" },
+    { id: "p5", label: "让小兔跳三次", emoji: "🔁", taskId: "task5", actorId: "rabbit", blocks: ["repeatThree", "hopOnce"], reply: "我听懂啦，你想让小兔跳三次。" },
+    { id: "p6", label: "点小狗变大变脸", emoji: "🐶", taskId: "task6", actorId: "dog", blocks: ["grow", "changeFace"], reply: "我听懂啦，你想点小狗让它变大又变脸。" },
+    { id: "p7", label: "让小猫叫小狗打招呼", emoji: "📨", taskId: "task7", actorId: "cat", blocks: ["sendMessage", "sayHello"], reply: "我听懂啦，你想让小猫叫小狗打招呼。" },
+    { id: "p8", label: "让大家接力表演", emoji: "🎭", taskId: "task8", actorId: "cat", blocks: ["sendMessage", "changeFace", "hopOnce"], reply: "我听懂啦，你想让大家接力表演。" },
+    { id: "pf1", label: "我想自由搭积木", emoji: "🧪", taskId: "freeLab", actorId: "cat", blocks: ["sendMessage", "hopOnce", "blink"], reply: "我听懂啦，你想自由搭积木。" },
+    { id: "pf2", label: "让大家一起动", emoji: "🎭", taskId: "freeLab", actorId: "cat", sceneId: "space", blocks: ["sendMessage", "hopOnce", "changeFace"], reply: "我听懂啦，你想让大家一起动。" },
+    { id: "pf3", label: "让小狗变大", emoji: "🔍", taskId: "freeLab", actorId: "dog", blocks: ["grow", "sayGreat"], reply: "我听懂啦，你想让小狗变大。" },
   ];
+
+  const UI_ASSETS = {
+    brandFallbackEmoji: "🧩",
+    brandPhotoCandidates: [
+      "assets/brand/brand-photo.jpg",
+      "assets/brand/brand-photo.jpeg",
+      "assets/brand/brand-photo.png",
+      "assets/brand/brand-photo.webp",
+    ],
+    teacher: {
+      imageSrc: "assets/characters/teacher.jpg",
+      emoji: "👩‍🏫",
+    },
+  };
+
+  const CONTROL_EMOJIS = {
+    readTask: "📖",
+    skipSpeech: "⏭️",
+    stopRun: "⏹️",
+    soundOn: "🔊",
+    soundOff: "🔇",
+    voiceToggle: "🎤",
+    readAi: "🔊",
+    run: "▶️",
+    reset: "🔄",
+    debug: "🛠️",
+  };
 
   App.createMessage = createMessage;
   App.config = {
@@ -423,12 +459,8 @@
     TASK_ORDER: TASK_ORDER,
     TASKS: TASKS,
     PROMPTS: PROMPTS,
-    BRAND_PHOTO_CANDIDATES: [
-      "assets/brand/brand-photo.png",
-      "assets/brand/brand-photo.jpg",
-      "assets/brand/brand-photo.jpeg",
-      "assets/brand/brand-photo.webp",
-    ],
+    CONTROL_EMOJIS: CONTROL_EMOJIS,
+    UI_ASSETS: UI_ASSETS,
     DEBUG_DELAY_OPTIONS: [0, 300, 800, 1500],
   };
 })(window);

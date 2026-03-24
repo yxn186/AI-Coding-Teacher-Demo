@@ -6,6 +6,114 @@
 
   const dom = {};
 
+  function escapeHtml(text) {
+    return String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function emojiMarkup(emoji, className) {
+    return '<span class="' + escapeHtml(className || "emoji-glyph") + '" aria-hidden="true">' + escapeHtml(emoji || "🙂") + "</span>";
+  }
+
+  function assetMarkup(imageSrc, emoji, altText, options) {
+    const settings = Object.assign(
+      {
+        wrapperClass: "",
+        imageClass: "",
+        emojiClass: "",
+      },
+      options || {}
+    );
+
+    return (
+      '<span class="asset-media is-fallback ' +
+      escapeHtml(settings.wrapperClass) +
+      '" data-src="' +
+      escapeHtml(imageSrc || "") +
+      '">' +
+      '<img class="asset-image ' +
+      escapeHtml(settings.imageClass) +
+      '" alt="' +
+      escapeHtml(altText || "") +
+      '" hidden>' +
+      '<span class="asset-emoji ' +
+      escapeHtml(settings.emojiClass) +
+      '" aria-hidden="true">' +
+      escapeHtml(emoji || "🙂") +
+      "</span></span>"
+    );
+  }
+
+  function bindAssetMedia(root) {
+    const scope = root || document;
+
+    Array.from(scope.querySelectorAll(".asset-media")).forEach(function bind(wrapper) {
+      const img = wrapper.querySelector(".asset-image");
+      const emoji = wrapper.querySelector(".asset-emoji");
+      const src = wrapper.dataset.src || "";
+
+      if (!img || !emoji) {
+        return;
+      }
+
+      function showFallback() {
+        wrapper.classList.add("is-fallback");
+        wrapper.classList.remove("is-ready");
+        img.hidden = true;
+        emoji.hidden = false;
+      }
+
+      function showImage() {
+        wrapper.classList.add("is-ready");
+        wrapper.classList.remove("is-fallback");
+        img.hidden = false;
+        emoji.hidden = true;
+      }
+
+      if (!src) {
+        showFallback();
+        return;
+      }
+
+      if (wrapper.dataset.bound === "true" && img.getAttribute("src") === src) {
+        if (img.complete) {
+          if (img.naturalWidth > 0) {
+            showImage();
+          } else {
+            showFallback();
+          }
+        }
+        return;
+      }
+
+      wrapper.dataset.bound = "true";
+      showFallback();
+      img.onload = function onload() {
+        if (img.naturalWidth > 0) {
+          showImage();
+        } else {
+          showFallback();
+        }
+      };
+      img.onerror = function onerror() {
+        showFallback();
+      };
+      img.src = src;
+
+      if (img.complete) {
+        if (img.naturalWidth > 0) {
+          showImage();
+        } else {
+          showFallback();
+        }
+      }
+    });
+  }
+
   function cacheDom() {
     dom.brandMark = document.getElementById("brand-photo") ? document.getElementById("brand-photo").parentElement : null;
     dom.brandPhoto = document.getElementById("brand-photo");
@@ -19,6 +127,7 @@
     dom.runtimeStatus = document.getElementById("runtime-status");
     dom.saveStatus = document.getElementById("save-status");
     dom.debugToggleBtn = document.getElementById("debug-toggle-btn");
+    dom.debugToggleText = document.getElementById("debug-toggle-text");
     dom.taskList = document.getElementById("task-list");
     dom.readTaskBtn = document.getElementById("read-task-btn");
     dom.skipSpeechBtn = document.getElementById("skip-speech-btn");
@@ -36,6 +145,7 @@
     dom.sceneBadge = document.getElementById("scene-badge");
     dom.sceneChips = document.getElementById("scene-chips");
     dom.readAiBtn = document.getElementById("read-ai-btn");
+    dom.aiAvatar = document.getElementById("ai-avatar");
     dom.aiMessage = document.getElementById("ai-message");
     dom.aiMoodChip = document.getElementById("ai-mood-chip");
     dom.aiSuggestion = document.getElementById("ai-suggestion");
@@ -98,9 +208,17 @@
   function blockMarkup(blockId, instance, isProgram) {
     const meta = config.BLOCKS[blockId];
     const tag = App.state.paramLabel(blockId, instance ? instance.param : App.state.defaultParam(blockId));
+    const visualTitle = meta.displayLabel || meta.label;
+    const titleMarkup = meta.tagText
+      ? '<span class="block-title-row"><span class="block-title">' +
+        visualTitle +
+        '</span><span class="block-speech-tag" aria-hidden="true">' +
+        meta.tagText +
+        "</span></span>"
+      : '<span class="block-title">' + visualTitle + "</span>";
     const el = document.createElement("div");
 
-    el.className = (isProgram ? "program-block " : "pool-block ") + meta.colorClass;
+    el.className = (isProgram ? "program-block " : "pool-block ") + meta.colorClass + " block-kind-" + meta.kind + (meta.tagText ? " has-block-tag" : "");
     el.dataset.blockId = blockId;
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
@@ -113,8 +231,8 @@
     }
 
     el.innerHTML =
-      '<span class="block-icon" aria-hidden="true">' + meta.icon + "</span>" +
-      '<span class="block-content"><span class="block-title">' + meta.label + "</span>" +
+      '<span class="block-icon" aria-hidden="true">' + emojiMarkup(meta.emoji, "emoji-glyph block-emoji") + "</span>" +
+      '<span class="block-content">' + titleMarkup +
       '<span class="block-sub">' + meta.subText + "</span></span>" +
       (tag
         ? isProgram
@@ -140,9 +258,21 @@
         btn.setAttribute("aria-current", "true");
       }
       btn.innerHTML =
-        '<span class="task-main"><span class="task-icon" aria-hidden="true">' + task.icon + '</span><span><span class="task-title">' + task.shortTitle + "</span><span class=\"task-sub\">" + (task.type === "free" ? "自由搭积木" : task.title) + "</span></span></span>";
+        '<span class="task-main"><span class="task-icon" aria-hidden="true">' +
+        assetMarkup(task.imageSrc, task.emoji, task.shortTitle + "任务图", {
+          wrapperClass: "task-media",
+          imageClass: "task-media-image",
+          emojiClass: "task-media-emoji",
+        }) +
+        '</span><span class="task-copy"><span class="task-title">' +
+        task.shortTitle +
+        "</span><span class=\"task-sub\">" +
+        (task.type === "free" ? "自由搭积木" : task.title) +
+        "</span></span></span>";
       dom.taskList.appendChild(btn);
     });
+
+    bindAssetMedia(dom.taskList);
   }
 
   function renderVoice() {
@@ -155,7 +285,12 @@
       chip.type = "button";
       chip.className = "voice-chip";
       chip.dataset.promptId = prompt.id;
-      chip.innerHTML = '<span aria-hidden="true">🎙</span><span>' + prompt.label + "</span>";
+      chip.innerHTML =
+        '<span class="voice-icon" aria-hidden="true">' +
+        emojiMarkup(prompt.emoji, "emoji-glyph voice-emoji") +
+        '</span><span class="voice-chip-label">' +
+        prompt.label +
+        "</span>";
       dom.voiceSamples.appendChild(chip);
     });
 
@@ -202,9 +337,20 @@
       btn.setAttribute("aria-selected", active ? "true" : "false");
       btn.setAttribute("aria-controls", "script-slots");
       btn.tabIndex = active || (!App.state.selectedActor() && index === 0) ? 0 : -1;
-      btn.innerHTML = actor.emoji + " " + actor.name;
+      btn.innerHTML =
+        '<span class="actor-tab-icon" aria-hidden="true">' +
+        assetMarkup(actor.imageSrc, actor.emoji, actor.name + "头像", {
+          wrapperClass: "actor-tab-media",
+          imageClass: "actor-tab-image",
+          emojiClass: "actor-tab-emoji",
+        }) +
+        '</span><span class="actor-tab-label">' +
+        actor.name +
+        "</span>";
       dom.actorTabs.appendChild(btn);
     });
+
+    bindAssetMedia(dom.actorTabs);
   }
 
   function renderTriggers() {
@@ -213,7 +359,12 @@
     config.SLOTS.forEach(function renderTrigger(slot) {
       const chip = document.createElement("div");
       chip.className = "trigger-chip";
-      chip.innerHTML = '<span aria-hidden="true">' + slot.icon + "</span><span>" + slot.label + "</span>";
+      chip.innerHTML =
+        '<span class="trigger-icon" aria-hidden="true">' +
+        emojiMarkup(slot.emoji, "emoji-glyph trigger-emoji") +
+        "</span><span>" +
+        slot.label +
+        "</span>";
       dom.triggerStrip.appendChild(chip);
     });
   }
@@ -246,7 +397,13 @@
           : '<span class="slot-tip">' + slot.tip + "</span>";
 
       section.innerHTML =
-        '<div class="slot-head"><div class="slot-title"><i>' + slot.icon + "</i><span>" + slot.label + "</span></div>" + right + '</div><div class="slot-list" data-actor-id="' + actorId + '" data-slot-id="' + slot.id + '" tabindex="0" role="list" aria-label="' + config.ACTORS[actorId].name + "的" + slot.label + '脚本槽"></div>';
+        '<div class="slot-head"><div class="slot-title"><i class="slot-title-icon" aria-hidden="true">' +
+        escapeHtml(slot.emoji) +
+        "</i><span>" +
+        slot.label +
+        "</span></div>" +
+        right +
+        '</div><div class="slot-list" data-actor-id="' + actorId + '" data-slot-id="' + slot.id + '" tabindex="0" role="list" aria-label="' + config.ACTORS[actorId].name + "的" + slot.label + '脚本槽"></div>';
 
       const list = section.querySelector(".slot-list");
       const items = App.state.blocks(actorId, slot.id);
@@ -306,12 +463,42 @@
       btn.setAttribute("aria-disabled", clickable ? "false" : "true");
       btn.setAttribute("aria-label", meta.name + (clickable ? "，运行中可点击触发脚本" : "，当前没有可点击脚本"));
       btn.innerHTML =
-        '<span class="stage-actor-bubble' + (state.bubble ? " is-visible" : "") + '">' + state.bubble + '</span><span class="stage-actor-shadow" aria-hidden="true"></span><span class="stage-actor-figure" style="--actor-offset:' + state.offsetX + "px; --actor-scale:" + state.scale + "; --actor-rotate:" + state.rotation + 'deg;"><span class="stage-actor-emoji" aria-hidden="true">' + meta.emoji + '</span></span><span class="stage-actor-meta"><span class="stage-actor-face">' + state.face + '</span><span class="stage-actor-label">' + meta.name + "</span></span>";
+        '<span class="stage-actor-bubble' +
+        (state.bubble ? " is-visible" : "") +
+        '">' +
+        state.bubble +
+        '</span><span class="stage-actor-shadow" aria-hidden="true"></span><span class="stage-actor-figure" style="--actor-offset:' +
+        state.offsetX +
+        "px; --actor-scale:" +
+        state.scale +
+        "; --actor-rotate:" +
+        state.rotation +
+        'deg;"><span class="stage-actor-icon" aria-hidden="true">' +
+        assetMarkup(meta.imageSrc, meta.emoji, meta.name + "角色图", {
+          wrapperClass: "stage-actor-media",
+          imageClass: "stage-actor-image",
+          emojiClass: "stage-actor-emoji",
+        }) +
+        '</span></span><span class="stage-actor-meta"><span class="stage-actor-face">' +
+        state.face +
+        '</span><span class="stage-actor-label">' +
+        meta.name +
+        "</span></span>";
       dom.stageActors.appendChild(btn);
     });
+
+    bindAssetMedia(dom.stageActors);
   }
 
   function renderAI() {
+    if (dom.aiAvatar) {
+      dom.aiAvatar.innerHTML = assetMarkup(config.UI_ASSETS.teacher.imageSrc, config.UI_ASSETS.teacher.emoji, "积木老师头像", {
+        wrapperClass: "ai-avatar-media",
+        imageClass: "ai-avatar-image",
+        emojiClass: "ai-avatar-emoji",
+      });
+      bindAssetMedia(dom.aiAvatar);
+    }
     dom.aiMessage.textContent = App.store.app.aiMessage;
     dom.aiMessage.dataset.mode = App.store.app.aiMode;
     dom.aiSuggestion.textContent = App.store.app.aiSuggestion || "";
@@ -320,13 +507,14 @@
 
   function renderControls() {
     const canSkip = Boolean(App.speech && App.speech.isPending());
+    const soundEmoji = App.store.app.isMuted ? config.CONTROL_EMOJIS.soundOff : config.CONTROL_EMOJIS.soundOn;
 
     dom.runBtn.disabled = App.store.runtime.isRunning;
     dom.resetBtn.disabled = App.store.runtime.isRunning;
     dom.stopBtn.disabled = !App.store.runtime.isRunning;
     dom.skipSpeechBtn.disabled = !canSkip || App.store.app.isMuted;
-    dom.soundToggleIcon.textContent = App.store.app.isMuted ? "🔇" : "🔈";
-    dom.soundToggleText.textContent = App.store.app.isMuted ? "已静音" : "有声音";
+    dom.soundToggleIcon.textContent = soundEmoji;
+    dom.soundToggleText.textContent = App.store.app.isMuted ? "静音" : "有声";
     dom.soundToggleBtn.setAttribute("aria-pressed", App.store.app.isMuted ? "true" : "false");
     dom.voiceToggleBtn.setAttribute("aria-expanded", App.store.app.voiceOpen ? "true" : "false");
     dom.debugToggleBtn.setAttribute("aria-expanded", App.store.debug.panelOpen ? "true" : "false");
@@ -363,7 +551,9 @@
     ensureDebugControls();
 
     dom.debugPanel.hidden = !App.store.debug.panelOpen;
-    dom.debugToggleBtn.textContent = App.store.debug.panelOpen ? "收起调试" : "调试面板";
+    if (dom.debugToggleText) {
+      dom.debugToggleText.textContent = App.store.debug.panelOpen ? "收起" : "调试";
+    }
     dom.debugDelaySelect.value = String(App.store.debug.apiDelayMs);
 
     dom.debugSummary.innerHTML = "";
@@ -425,6 +615,7 @@
       return;
     }
 
+    dom.brandFallback.textContent = config.UI_ASSETS.brandFallbackEmoji;
     dom.brandMark.classList.remove("has-photo");
     dom.brandPhoto.classList.remove("is-visible");
     dom.brandPhoto.hidden = true;
@@ -440,11 +631,11 @@
     showBrandFallback();
 
     (function tryLoad(index) {
-      if (index >= config.BRAND_PHOTO_CANDIDATES.length) {
+      if (index >= config.UI_ASSETS.brandPhotoCandidates.length) {
         return;
       }
 
-      const src = config.BRAND_PHOTO_CANDIDATES[index];
+      const src = config.UI_ASSETS.brandPhotoCandidates[index];
       const image = new Image();
 
       image.onload = function onload() {
@@ -477,6 +668,7 @@
     renderStatusBar();
     renderDebugPanel();
     renderLiveRegions();
+    bindAssetMedia(document);
   }
 
   App.dom = dom;
@@ -497,6 +689,7 @@
     renderStatusBar: renderStatusBar,
     renderDebugPanel: renderDebugPanel,
     renderLiveRegions: renderLiveRegions,
+    bindAssetMedia: bindAssetMedia,
     renderAll: renderAll,
     moodLabel: moodLabel,
   };

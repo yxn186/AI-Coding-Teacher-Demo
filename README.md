@@ -15,6 +15,7 @@
 - `drag.js`：拖拽、触屏兜底、键盘可达的程序区操作。
 - `bootstrap.js`：初始化、事件绑定、兼容导出。
 - `script.js`：旧单文件入口的占位说明，不再参与实际运行。
+- `assets/README.md`：角色、任务、老师和品牌图片素材的命名规则与回退说明。
 
 ## 运行方式
 
@@ -73,9 +74,16 @@ jimu-app:workspace:v2
 ## 如何新增任务
 
 1. 在 `config.js` 的 `TASKS` 中新增任务配置。
-2. 配好 `actors`、`allowed`、`intro`、`success`、`goal` 和 `validationPlan`。
+2. 配好 `actors`、`allowed`、`intro`、`success`、`goal`、`emoji` / `imageSrc` 和 `validationPlan`。
 3. 如需语音示例，在 `PROMPTS` 中新增对应 prompt。
 4. 如需默认消息名，补充 `state.js` 里的 `defaultMessageName()`。
+
+### 图片素材与 emoji 回退
+
+- 角色头像、任务卡小图、小老师头像和顶部品牌图优先读取 `assets/` 下的本地图片。
+- 如果图片文件不存在、路径为空或加载失败，页面会自动回退到配置里的 emoji，不会报错，也不会留空白。
+- 当前项目已经约定好 `assets/characters/*.jpg`、`assets/tasks/*.jpg` 和 `assets/brand/brand-photo.jpg` 的路径规则。
+- 完整命名清单见 [assets/README.md](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/assets/README.md)。
 
 ### `validationPlan` 规则类型
 
