@@ -3,11 +3,203 @@
 
   const App = global.JimuApp = global.JimuApp || {};
   const config = App.config;
+  const createMessage = App.createMessage;
+
+  function createLocalMessage(text, mood, suggestion, speakText) {
+    if (typeof createMessage === "function") {
+      return Object.assign(createMessage(text, mood, suggestion, speakText), {
+        source: "fallback",
+      });
+    }
+
+    return {
+      text: text || "",
+      mood: mood || "guide",
+      suggestion: suggestion || "",
+      speakText: speakText || text || "",
+      source: "fallback",
+    };
+  }
+
+  function buildLocalTutorMessage(context) {
+    if (!context) {
+      return createLocalMessage("先拖几块积木来试试看吧。", "guide", "试试先放一个开始积木。");
+    }
+
+    if (context.type === "task" && config.TASKS[context.taskId]) {
+      return createLocalMessage(config.TASKS[context.taskId].intro, "guide", context.suggestion || "");
+    }
+
+    if (context.type === "success" && config.TASKS[context.taskId]) {
+      return createLocalMessage(config.TASKS[context.taskId].success, "success", context.suggestion || "");
+    }
+
+    if (context.type === "voice") {
+      return createLocalMessage(context.reply || "我听懂啦，我们继续搭积木吧。", "voice", context.suggestion || "");
+    }
+
+    if (context.type === "custom") {
+      return createLocalMessage(context.text, context.mood, context.suggestion, context.speakText);
+    }
+
+    if (context.type === "error") {
+      return createLocalMessage(context.text || "没关系，我们再试一次。", "error", context.suggestion || "先看看第一块积木放对了吗？");
+    }
+
+    return createLocalMessage("我们继续试试看吧。", "guide", context && context.suggestion ? context.suggestion : "先拖一个开始积木。");
+  }
+
+  function buildLocalVoiceIntent(promptId) {
+    const prompt = config.PROMPTS.find(function findPrompt(item) {
+      return item.id === promptId;
+    });
+
+    if (!prompt) {
+      return {
+        nextTaskId: App.store.app.currentTaskId,
+        selectedActorId: App.state.selectedActor(),
+        selectedActor: App.state.selectedActor(),
+        sceneId: App.state.ws().sceneId,
+        suggestedBlocks: [],
+        reply: "我先陪你继续搭积木吧。",
+      };
+    }
+
+    return {
+      nextTaskId: prompt.taskId,
+      selectedActorId: prompt.actorId || App.state.selectedActor(),
+      selectedActor: prompt.actorId || App.state.selectedActor(),
+      sceneId: prompt.sceneId || null,
+      suggestedBlocks: Array.isArray(prompt.blocks) ? prompt.blocks.slice() : [],
+      reply: prompt.reply || "我听懂啦。",
+    };
+  }
+
+  function getApi() {
+    return App.api && typeof App.api === "object" ? App.api : null;
+  }
+
+  function logApiWarn(message, meta) {
+    if (typeof App.log === "function") {
+      App.log("warn", message, meta);
+    }
+  }
+
+  function getActiveAdapterNameSafe() {
+    const api = getApi();
+
+    if (api && typeof api.getActiveAdapterName === "function") {
+      try {
+        return api.getActiveAdapterName() || "mock";
+      } catch (error) {
+        logApiWarn("读取当前适配器名称失败，已回退到 mock。", { message: error.message });
+      }
+    }
+
+    return "mock";
+  }
+
+  function getTutorReplySyncSafe(context) {
+    const api = getApi();
+
+    if (api && typeof api.getTutorReplySync === "function") {
+      try {
+        return api.getTutorReplySync(context);
+      } catch (error) {
+        logApiWarn("同步小老师提示不可用，已回退到本地默认提示。", { message: error.message });
+      }
+    } else {
+      logApiWarn("AI 适配层尚未就绪，已回退到同步默认提示。", {
+        method: "getTutorReplySync",
+      });
+    }
+
+    return buildLocalTutorMessage(context);
+  }
+
+  function resolveVoiceIntentSyncSafe(promptId) {
+    const api = getApi();
+
+    if (api && typeof api.resolveVoiceIntentSync === "function") {
+      try {
+        return api.resolveVoiceIntentSync(promptId);
+      } catch (error) {
+        logApiWarn("同步语音意图解析不可用，已回退到本地默认方案。", { message: error.message });
+      }
+    } else {
+      logApiWarn("AI 适配层尚未就绪，已回退到同步语音默认方案。", {
+        method: "resolveVoiceIntentSync",
+      });
+    }
+
+    return buildLocalVoiceIntent(promptId);
+  }
+
+  async function requestTutorReplySafe(context) {
+    const api = getApi();
+
+    if (api && typeof api.getTutorReply === "function") {
+      try {
+        return await api.getTutorReply(context);
+      } catch (error) {
+        logApiWarn("异步小老师提示失败，已回退到同步默认提示。", { message: error.message });
+        return getTutorReplySyncSafe(context);
+      }
+    }
+
+    logApiWarn("AI 适配层尚未就绪，已回退到同步默认提示。", {
+      method: "getTutorReply",
+    });
+    return getTutorReplySyncSafe(context);
+  }
+
+  async function requestVoiceIntentSafe(promptId) {
+    const api = getApi();
+
+    if (api && typeof api.resolveVoiceIntent === "function") {
+      try {
+        return await api.resolveVoiceIntent(promptId);
+      } catch (error) {
+        logApiWarn("异步语音意图解析失败，已回退到同步默认方案。", { message: error.message });
+        return resolveVoiceIntentSyncSafe(promptId);
+      }
+    }
+
+    logApiWarn("AI 适配层尚未就绪，已回退到同步语音默认方案。", {
+      method: "resolveVoiceIntent",
+    });
+    return resolveVoiceIntentSyncSafe(promptId);
+  }
+
+  async function requestProviderHealthSafe() {
+    const api = getApi();
+
+    if (api && typeof api.getHealth === "function") {
+      try {
+        return await api.getHealth();
+      } catch (error) {
+        logApiWarn("适配层健康检查失败，已回退到安全状态。", { message: error.message });
+        return {
+          provider: getActiveAdapterNameSafe(),
+          status: "fallback",
+        };
+      }
+    }
+
+    logApiWarn("AI 适配层健康检查不可用，已回退到安全状态。", {
+      method: "getHealth",
+    });
+    return {
+      provider: "mock",
+      status: "fallback",
+    };
+  }
 
   function applyAiCopy(copy) {
     App.store.app.aiMessage = copy.text || "";
     App.store.app.aiMode = copy.mood || "guide";
     App.store.app.aiSuggestion = copy.suggestion || "";
+    App.store.app.lastTutorReplySource = copy && copy.source === "deepseek" ? "deepseek" : "fallback";
     App.announce(copy.mood === "error" ? "assertive" : "polite", copy.text || "");
     App.render.renderAI();
   }
@@ -23,10 +215,10 @@
       options || {}
     );
 
-    const copy = await App.guard(
+    let copy = await App.guard(
       "tutor-adapter",
       function requestTutorReply() {
-        return App.api.getTutorReply(context);
+        return requestTutorReplySafe(context);
       },
       {
         loadingText: settings.loadingText,
@@ -35,7 +227,11 @@
     );
 
     if (!copy) {
-      return null;
+      copy = getTutorReplySyncSafe(context);
+    }
+
+    if (!copy) {
+      copy = buildLocalTutorMessage(context);
     }
 
     if (!settings.autoSpeak) {
@@ -101,10 +297,10 @@
       return item.id === promptId;
     });
     const spokenLabel = prompt ? prompt.label : "继续搭积木";
-    const info = await App.guard(
+    let info = await App.guard(
       "voice-intent",
       function resolveIntent() {
-        return App.api.resolveVoiceIntent(promptId);
+        return requestVoiceIntentSafe(promptId);
       },
       {
         loadingText: "正在理解这句话…",
@@ -112,7 +308,11 @@
     );
 
     if (!info) {
-      return;
+      info = resolveVoiceIntentSyncSafe(promptId);
+    }
+
+    if (!info) {
+      info = buildLocalVoiceIntent(promptId);
     }
 
     App.speech.stop();
@@ -156,17 +356,13 @@
   }
 
   async function refreshProviderHealth() {
-    const health = await App.guard("adapter-health", function getHealth() {
-      return App.api.getHealth();
+    const health = await App.guard("adapter-health", function getHealthSafe() {
+      return requestProviderHealthSafe();
     });
 
-    if (!health) {
-      return;
-    }
-
     App.store.app.providerHealth = {
-      provider: health.provider || App.api.getActiveAdapterName(),
-      status: health.status || "unknown",
+      provider: health && health.provider ? health.provider : "mock",
+      status: health && health.status ? health.status : "fallback",
     };
     App.render.renderStatusBar();
     App.render.renderDebugPanel();
@@ -548,12 +744,12 @@
   App.showTutorMessage = showTutorMessage;
   global.tutorAdapter = {
     getMessage: function getMessage(context) {
-      return App.api.getTutorReplySync(context);
+      return getTutorReplySyncSafe(context);
     },
   };
   global.voiceInputAdapter = {
     resolvePrompt: function resolvePrompt(promptId) {
-      return App.api.resolveVoiceIntentSync(promptId);
+      return resolveVoiceIntentSyncSafe(promptId);
     },
   };
   global.advanceTime = function advanceTime(ms) {

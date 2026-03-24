@@ -104,6 +104,7 @@
       drag: null,
       lastError: null,
       providerHealth: { provider: "mock", status: "ready" },
+      lastTutorReplySource: "unknown",
       ignorePoolClickUntil: 0,
     };
   }

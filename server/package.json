@@ -1,0 +1,20 @@
+﻿{
+  "name": "jimu-teacher-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lightweight local DeepSeek bridge for 积木小老师",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}

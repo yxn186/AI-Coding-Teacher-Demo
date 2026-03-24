@@ -563,6 +563,7 @@
       "静音：" + (App.store.app.isMuted ? "开" : "关"),
       "运行：" + (App.store.runtime.isRunning ? "中" : "否"),
       "适配器：" + (App.store.app.providerHealth ? App.store.app.providerHealth.provider : "mock"),
+      "最近提示来源：" + (App.store.app.lastTutorReplySource || "unknown"),
       "最近错误：" + (App.store.app.lastError ? App.store.app.lastError.message : "无"),
       "最近保存：" + App.formatTime(App.store.storage.lastSavedAt),
     ].forEach(function renderSummary(text) {
