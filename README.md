@@ -1,19 +1,19 @@
-﻿# 积木小老师
+# 积木小老师
 
-一个面向儿童的本地前端原型，包含任务区、舞台区、AI 小老师区、程序区、8 个任务、自由实验室、拖拽积木、运行反馈、语音示例和浏览器朗读。
+一个面向儿童的本地前端原型，包含任务区、舞台区、AI 小老师区、程序区、8 个任务、自由实验室、拖拽积木、运行反馈、语音示例，以及“本地后端转厂商 API”的统一接入方式。
 
-当前版本已经进入“真实 AI 接入第一步”：
+当前版本已经接入两条真实能力：
 
-- 前端仍然保留原来的页面结构、任务系统、拖拽逻辑、运行逻辑、语音按钮、AI 小老师面板和统一适配器结构。
-- `speech.js` 仍然使用浏览器原生 `speechSynthesis`，暂时没有接入豆包 TTS。
-- 新增了一个 `server/` 目录，用本地 Node.js + Express 后端去调用 DeepSeek 文字接口。
-- 前端 `api.js` 现在支持 `auto / server / mock` 三种模式，默认是 `auto`：优先尝试本地后端，失败时自动回退到 mock。
+- 文字提示：前端通过本地 `server/` 调用 DeepSeek。
+- 朗读语音：前端通过本地 `server/` 调用豆包 TTS；如果豆包不可用，会自动回退到浏览器原生 `speechSynthesis`。
 
-## 你现在有两种使用方式
+前端仍然保持原来的页面结构、任务系统、拖拽逻辑、运行逻辑、语音按钮、AI 小老师面板和统一适配器结构。前端不会直接请求厂商 API。
 
-### 方式一：继续当纯前端原型使用
+## 两种使用方式
 
-如果你现在只是想继续看页面、拖积木、跑任务，不用真实 AI，也可以像以前一样直接打开：
+### 方式一：只当本地前端原型使用
+
+如果你现在只是想直接打开页面继续演示，可以：
 
 1. 双击根目录里的 `index.html`
 2. 用现代浏览器打开即可
@@ -21,15 +21,20 @@
 这种情况下：
 
 - 页面仍然能运行
-- AI 小老师文案会走前端 mock
-- 朗读仍然使用浏览器原生语音
+- AI 小老师文案会走前端 mock 或本地默认兜底
+- 朗读会走浏览器原生语音
 - 不需要安装 Node.js
 
-### 方式二：接入 DeepSeek 真实文字提示
+### 方式二：接入真实 AI 与真实 TTS
 
-如果你要让 AI 小老师真正通过 DeepSeek 生成文字提示，请按下面步骤做。
+如果你要：
 
-## 用 DeepSeek 的最简步骤
+- 让 AI 小老师文字提示来自 DeepSeek
+- 让页面朗读优先来自豆包 TTS
+
+请按下面步骤做。
+
+## 最简启动步骤
 
 ### 第一步：安装 Node.js
 
@@ -59,7 +64,7 @@ cd server
 npm install
 ```
 
-安装完成后，会生成 `node_modules`。
+安装完成后会生成 `node_modules`。
 
 ### 第四步：复制 `.env.example` 为 `.env`
 
@@ -75,44 +80,48 @@ npm install
 .env
 ```
 
-你也可以用终端执行：
+也可以用终端执行：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-### 第五步：填写你的 DeepSeek API Key
+### 第五步：填写你自己的 DeepSeek 和豆包配置
 
-打开这个文件：
-
-[server/.env.example](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/.env.example)
-
-真正需要填写的是复制出来的：
+真正需要填写的是：
 
 `server/.env`
 
-请把这一行：
+参考模板文件：
+
+[server/.env.example](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/.env.example)
+
+你至少需要填写这些占位：
 
 ```text
 DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY_HERE
+DOUBAO_TTS_APPID=YOUR_DOUBAO_TTS_APPID_HERE
+DOUBAO_TTS_TOKEN=YOUR_DOUBAO_TTS_TOKEN_HERE
+DOUBAO_TTS_CLUSTER=YOUR_DOUBAO_TTS_CLUSTER_HERE
+DOUBAO_TTS_VOICE_TYPE=YOUR_DOUBAO_TTS_VOICE_TYPE_HERE
 ```
 
-改成你自己的 key，例如：
-
-```text
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
-```
-
-其他配置默认可以先不改：
+其余默认配置可以先不改：
 
 ```text
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 DEEPSEEK_TIMEOUT_MS=15000
+DOUBAO_TTS_RATE=24000
+DOUBAO_TTS_ENCODING=mp3
+DOUBAO_TTS_SPEED_RATIO=1.0
+DOUBAO_TTS_VOLUME_RATIO=1.0
+DOUBAO_TTS_PITCH_RATIO=1.0
+DOUBAO_TTS_TIMEOUT_MS=15000
 PORT=3000
 ```
 
-### 第六步：启动后端
+### 第六步：启动本地后端
 
 在 `server` 文件夹执行：
 
@@ -126,15 +135,15 @@ npm start
 DeepSeek server running at http://localhost:3000
 ```
 
-如果你没有填写 key，终端也会明确提示你去填写 `server/.env`，但服务依然会启动。
+如果 DeepSeek 或豆包配置缺失，服务仍然会启动，但终端会明确提示缺了哪一类配置，并自动回退到兜底能力。
 
-### 第七步：检查后端是否正常
+### 第七步：检查后端是否已启动
 
-打开浏览器访问：
+先检查健康接口：
 
 [http://localhost:3000/api/health](http://localhost:3000/api/health)
 
-你会看到类似结果：
+你会看到类似：
 
 ```json
 {
@@ -143,7 +152,7 @@ DeepSeek server running at http://localhost:3000
 }
 ```
 
-如果没有填 key，通常会看到：
+如果没填 DeepSeek Key，通常会看到：
 
 ```json
 {
@@ -158,146 +167,191 @@ DeepSeek server running at http://localhost:3000
 
 此时前端默认会：
 
-- 优先调用 `http://localhost:3000/api/tutor-reply`
-- 如果后端可用，就使用 DeepSeek 返回的小老师文案
-- 如果后端没启动、Key 没填、请求超时或失败，就自动回退到 mock
+- 优先请求 `http://localhost:3000/api/tutor-reply` 获取 DeepSeek 文案
+- 优先请求 `http://localhost:3000/api/tts` 获取豆包 TTS 音频
+- 如果后端没启动、配置没填、请求超时或失败，会自动回退
 
-你不需要再改前端其他文件。
+你不需要修改前端其它文件。
 
-## 哪些文件是这次新增或重点修改的
+## 这次的关键文件
 
 ### 后端文件
 
-- [server/package.json](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/package.json)
 - [server/server.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/server.js)
 - [server/deepseek.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/deepseek.js)
+- [server/doubaoTts.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/doubaoTts.js)
 - [server/.env.example](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/.env.example)
-- [server/.gitignore](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/.gitignore)
+- [server/package.json](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server/package.json)
 
-### 前端适配层
+### 前端文件
 
 - [api.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/api.js)
+- [speech.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/speech.js)
+- [state.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/state.js)
+- [render.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/render.js)
+- [bootstrap.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/bootstrap.js)
 
-## 前端现在怎么调用真实 AI
+## 前端现在怎么调用后端
 
-前端其他层没有直接写 DeepSeek 请求。
+前端其它层仍然不会直接写厂商请求。
 
-仍然只通过统一接口调用：
+统一通过：
 
 ```js
 App.api.getTutorReply(context)
 App.api.resolveVoiceIntent(promptId)
 App.api.getHealth()
+App.api.getTtsAudio(text)
 ```
 
 这意味着：
 
-- `bootstrap.js` 里原来的 `showTutorMessage(...)` 调用方式保留
-- `render.js`、`runtime.js`、`speech.js` 不需要直接知道 DeepSeek
-- 将来如果要接豆包 TTS，也只需要继续扩展适配层和后端，不用推翻当前前端结构
+- `bootstrap.js` 里的 `showTutorMessage(...)` 调用方式保留
+- `render.js`、`runtime.js`、页面按钮都不直接知道 DeepSeek 或豆包
+- `speech.js` 只知道“先请求本地 `/api/tts`，失败再回退浏览器朗读”
 
-## `api.js` 里的模式说明
+## 现在的朗读行为
 
-当前 `api.js` 支持三种模式：
+页面里的这些朗读入口都会优先尝试豆包 TTS：
 
-- `auto`：默认模式。先请求本地后端，失败时自动回退 mock。
-- `server`：强制走本地后端。请求失败时显示本地兜底文案，但不自动切到 mock 健康状态。
-- `mock`：完全不请求后端，始终使用前端 mock。
+- 顶部“朗读当前任务”
+- 顶部“跳过朗读”
+- 顶部“停下”
+- 右侧“小老师”区域的朗读按钮
+- `showTutorMessage(..., { autoSpeak: true })` 触发的朗读
 
-### 默认模式
+如果豆包返回成功：
 
-默认是：
+- 会播放真实远程音频
 
-```js
-auto
+如果豆包失败、未配置、超时、返回异常：
+
+- 会自动回退到浏览器原生 `speechSynthesis`
+- 页面不会因为 TTS 失败而不能演示
+
+## 如何验证豆包 TTS 是否接通
+
+### 方法一：看后端终端日志
+
+每次前端请求 TTS，终端都会打印：
+
+```text
+[tts] request ...
 ```
 
-也就是最适合本地开发的模式。
+如果成功，会打印：
 
-### 如果你想临时切回 mock
+```text
+[tts] success ...
+```
 
-打开浏览器开发者工具控制台，执行：
+如果回退，会打印：
+
+```text
+[tts] fallback reason=... message=...
+```
+
+常见 fallback 原因包括：
+
+- `missing_config`
+- `text_empty`
+- `text_too_long`
+- `timeout`
+- `request_failed`
+- `invalid_response`
+
+### 方法二：直接测本地接口
+
+你可以用任意调试工具向本地后端发送：
+
+`POST http://localhost:3000/api/tts`
+
+请求体：
+
+```json
+{
+  "text": "你好，我是积木小老师。"
+}
+```
+
+成功时返回：
+
+```json
+{
+  "audioBase64": "...",
+  "format": "mp3",
+  "source": "doubao"
+}
+```
+
+失败时返回：
+
+```json
+{
+  "audioBase64": "",
+  "format": "mp3",
+  "source": "fallback",
+  "error": "missing_config: ..."
+}
+```
+
+### 方法三：看页面调试面板
+
+页面调试面板现在会显示：
+
+- `最近提示来源`
+- `最近朗读来源`
+- `最近朗读错误`
+
+如果最近一次朗读走了豆包，会看到：
+
+```text
+最近朗读来源：doubao
+```
+
+如果最近一次朗读走了浏览器回退，会看到：
+
+```text
+最近朗读来源：fallback
+```
+
+## 如果没有填豆包配置，会发生什么
+
+如果 `server/.env` 里这些值没填完整：
+
+```text
+DOUBAO_TTS_APPID=YOUR_DOUBAO_TTS_APPID_HERE
+DOUBAO_TTS_TOKEN=YOUR_DOUBAO_TTS_TOKEN_HERE
+DOUBAO_TTS_CLUSTER=YOUR_DOUBAO_TTS_CLUSTER_HERE
+DOUBAO_TTS_VOICE_TYPE=YOUR_DOUBAO_TTS_VOICE_TYPE_HERE
+```
+
+那么：
+
+- `POST /api/tts` 会返回 `source: "fallback"`
+- 后端会打印明确的 fallback 原因
+- 页面朗读仍然可用，但改为浏览器原生语音
+- 不会让前端崩掉
+
+## API 模式说明
+
+当前 `api.js` 仍支持三种模式：
+
+- `auto`：默认模式。先请求本地后端，失败时自动回退 mock 或本地默认能力。
+- `server`：强制走本地后端。
+- `mock`：完全不请求后端。
+
+如果你想临时切回 mock，可在浏览器控制台执行：
 
 ```js
 JimuApp.api.setMode("mock")
 ```
 
-### 如果你想恢复自动模式
-
-执行：
+如果想恢复自动模式：
 
 ```js
 JimuApp.api.setMode("auto")
 ```
-
-### 如果你想强制只走本地后端
-
-执行：
-
-```js
-JimuApp.api.setMode("server")
-```
-
-这个模式会保存到浏览器 `localStorage`，刷新页面后仍然生效。
-
-## 如果没有填 Key，会发生什么
-
-如果 `server/.env` 里的这行没有填写：
-
-```text
-DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY_HERE
-```
-
-那么：
-
-- `GET /api/health` 会返回 `missing_key`
-- `POST /api/tutor-reply` 不会让页面崩掉
-- 后端会返回兜底文案
-- 前端在 `auto` 模式下仍然能正常继续使用
-
-## 当前后端接口
-
-### `GET /api/health`
-
-作用：
-
-- 给前端状态条和调试信息使用
-- 检查当前后端与 DeepSeek 配置状态
-
-返回示例：
-
-```json
-{
-  "provider": "deepseek",
-  "status": "ready"
-}
-```
-
-### `POST /api/tutor-reply`
-
-前端发送：
-
-```json
-{
-  "context": {
-    "type": "task",
-    "taskId": "task1"
-  }
-}
-```
-
-后端返回：
-
-```json
-{
-  "text": "先把说你好放进小猫的点击脚本里吧。",
-  "mood": "guide",
-  "suggestion": "先点一下小猫对应的脚本槽。",
-  "speakText": "先把说你好放进小猫的点击脚本里吧。"
-}
-```
-
-即使 DeepSeek 请求失败、超时、Key 缺失、返回格式异常，后端也会回退到默认提示，不会直接把错误抛给前端页面。
 
 ## 目录说明
 
@@ -306,20 +360,12 @@ DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY_HERE
 - [state.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/state.js)：状态、持久化、日志、统一错误处理
 - [render.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/render.js)：渲染任务区、舞台区、AI 面板和程序区
 - [runtime.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/runtime.js)：校验与执行逻辑
-- [speech.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/speech.js)：浏览器原生朗读
+- [speech.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/speech.js)：远程 TTS 优先、浏览器朗读回退
 - [bootstrap.js](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/bootstrap.js)：初始化与事件绑定
-- [assets/README.md](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/assets/README.md)：图片素材命名与 emoji 回退规则
-- [server/](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server)：本地 DeepSeek 后端
+- [server/](/D:/AI_Coding/jimuxiaolaoshi-demo-v2.0/server)：本地 DeepSeek + 豆包 TTS 后端
 
-## 语音部分目前的状态
+## 当前限制
 
-这次只接了 DeepSeek 的文字提示。
-
-目前仍然是：
-
-- AI 小老师文字内容可以来自 DeepSeek
-- 朗读按钮继续使用浏览器原生 `speechSynthesis`
-- 豆包语音 API 还没有接入
-
-后续如果你要接 TTS，建议继续放在 `server/` 里扩展，不要把厂商请求直接写回前端页面层。
-
+- 当前环境里如果没有安装 Node.js，本仓库仍然只能做静态前端演示。
+- 浏览器原生朗读仍然是重要兜底链路，不建议删除。
+- 如果以后要接更多语音能力，仍建议继续放在 `server/` 下，由前端只请求本地后端。

@@ -1,4 +1,4 @@
-﻿Original prompt: Build a directly runnable single-page HTML prototype for "积木小老师——面向儿童的 AI 编程启蒙伙伴" with real block dragging, AI guidance, speech synthesis, fake voice input, and two playable tasks.
+Original prompt: Build a directly runnable single-page HTML prototype for "积木小老师——面向儿童的 AI 编程启蒙伙伴" with real block dragging, AI guidance, speech synthesis, fake voice input, and two playable tasks.
 
 - Created initial static app structure in `index.html`, `style.css`, and `script.js`.
 - Implemented data-driven tasks, stage, AI panel, block pool, and program track layout.
@@ -34,3 +34,7 @@
 - TTS is still intentionally unchanged. `speech.js` continues to use browser `speechSynthesis`; future 豆包 TTS should be added behind the same backend/adapter boundary instead of directly in the UI layer.
 
 - Static checks for the DeepSeek step are limited in this environment because Node.js is not installed here. Verified instead that server/package.json parses as JSON, required .env placeholders exist, the backend routes/constants are present, and the frontend still calls only the unified App.api interface while speech.js remains on browser speechSynthesis.
+- Added a local Doubao TTS bridge in `server/doubaoTts.js` and exposed `POST /api/tts`; the backend now logs `[tts] request/success/fallback` with explicit fallback reasons and never crashes when TTS config is missing.
+- Extended the unified frontend adapter with `App.api.getTtsAudio(text)` and upgraded `speech.js` to remote-audio-first playback with browser speech fallback, queue/skip/stop compatibility, and front-end sentence splitting for long text.
+- Added transient TTS debug state (`lastTtsSource`, `lastTtsError`) to the debug panel so the latest read-aloud path is visible without changing persisted localStorage data.
+- Updated the README for combined DeepSeek + Doubao setup. Runtime verification is still limited here because Node.js / browser automation are unavailable in this environment.

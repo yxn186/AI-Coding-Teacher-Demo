@@ -3,13 +3,16 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const { createDeepSeekClient, buildFallbackTutorReply } = require("./deepseek");
+const { createDoubaoTtsClient, buildFallbackReply, utf8ByteLength } = require("./doubaoTts");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const port = Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3000;
 const deepseek = createDeepSeekClient(process.env);
-const configSummary = deepseek.getConfigSummary();
+const deepseekConfigSummary = deepseek.getConfigSummary();
+const doubaoTts = createDoubaoTtsClient(process.env);
+const ttsConfigSummary = doubaoTts.getConfigSummary();
 
 function nowIso() {
   return new Date().toISOString();
@@ -20,6 +23,15 @@ function summarizeContext(context) {
     at: nowIso(),
     type: context && context.type ? String(context.type) : "-",
     taskId: context && context.taskId ? String(context.taskId) : "-"
+  };
+}
+
+function summarizeTtsRequest(text) {
+  const normalized = String(text || "");
+  return {
+    at: nowIso(),
+    chars: normalized.length,
+    bytes: utf8ByteLength(normalized)
   };
 }
 
@@ -43,6 +55,33 @@ function logTutorResult(summary, meta) {
       summary.type +
       " taskId=" +
       summary.taskId +
+      " reason=" +
+      (meta && meta.reason ? meta.reason : "unknown_error") +
+      " message=" +
+      (meta && meta.message ? meta.message : "-")
+  );
+}
+
+function logTtsRequest(summary) {
+  console.log("[tts] request at=" + summary.at + " chars=" + summary.chars + " bytes=" + summary.bytes);
+}
+
+function logTtsResult(summary, meta) {
+  const at = nowIso();
+  const source = meta && meta.source ? meta.source : "fallback";
+
+  if (source === "doubao") {
+    console.log("[tts] success at=" + at + " chars=" + summary.chars + " bytes=" + summary.bytes);
+    return;
+  }
+
+  console.warn(
+    "[tts] fallback at=" +
+      at +
+      " chars=" +
+      summary.chars +
+      " bytes=" +
+      summary.bytes +
       " reason=" +
       (meta && meta.reason ? meta.reason : "unknown_error") +
       " message=" +
@@ -95,6 +134,36 @@ app.post("/api/tutor-reply", async function handleTutorReply(req, res) {
   }
 });
 
+app.post("/api/tts", async function handleTts(req, res) {
+  const text = req.body && typeof req.body.text === "string" ? req.body.text : "";
+  const summary = summarizeTtsRequest(text);
+
+  logTtsRequest(summary);
+
+  try {
+    const result = await doubaoTts.getTtsAudio(text);
+    const reply = result && result.reply ? result.reply : buildFallbackReply("unknown_error");
+    const meta = result && result.meta
+      ? result.meta
+      : {
+          source: reply.source || "fallback",
+          reason: reply.source === "doubao" ? "" : "unknown_error",
+          message: reply.error || "missing meta"
+        };
+
+    logTtsResult(summary, meta);
+    res.json(reply);
+  } catch (error) {
+    const reply = buildFallbackReply("server_handler_error", error);
+    logTtsResult(summary, {
+      source: "fallback",
+      reason: "server_handler_error",
+      message: error && error.message ? error.message : "unknown error"
+    });
+    res.json(reply);
+  }
+});
+
 app.use(function handleJsonError(error, req, res, next) {
   if (!error) {
     next();
@@ -115,6 +184,18 @@ app.use(function handleJsonError(error, req, res, next) {
     return;
   }
 
+  if (req.path === "/api/tts") {
+    const summary = summarizeTtsRequest("");
+    const reply = buildFallbackReply("request_parse_error", error);
+    logTtsResult(summary, {
+      source: "fallback",
+      reason: "request_parse_error",
+      message: error.message
+    });
+    res.json(reply);
+    return;
+  }
+
   res.status(500).json({
     provider: "deepseek",
     status: "error"
@@ -124,15 +205,22 @@ app.use(function handleJsonError(error, req, res, next) {
 app.listen(port, function onListen() {
   console.log("DeepSeek server running at http://localhost:" + port);
   console.log("Provider: deepseek");
-  console.log("Model: " + configSummary.model);
-  console.log("Base URL: " + configSummary.baseUrl);
+  console.log("Model: " + deepseekConfigSummary.model);
+  console.log("Base URL: " + deepseekConfigSummary.baseUrl);
 
-  if (!configSummary.hasKey) {
+  if (!deepseekConfigSummary.hasKey) {
     console.warn("[config] 未检测到可用的 DeepSeek API Key。");
     console.warn("[config] 请复制 server/.env.example 为 server/.env，然后填写 DEEPSEEK_API_KEY。");
   } else {
     console.log("[config] DeepSeek API Key 已配置。前端现在可以通过 /api/tutor-reply 调用真实文字能力。");
   }
 
-  console.log("[note] 当前语音仍使用浏览器原生 speechSynthesis，豆包 TTS 位置暂未接入。");
+  if (!ttsConfigSummary.hasConfig) {
+    console.warn("[config] 豆包 TTS 配置未完成，将自动回退到浏览器原生朗读。");
+    console.warn("[config] 请在 server/.env 中填写 DOUBAO_TTS_APPID / TOKEN / CLUSTER / VOICE_TYPE。");
+  } else {
+    console.log("[config] 豆包 TTS 已配置。voice_type=" + ttsConfigSummary.voiceType + " cluster=" + ttsConfigSummary.cluster);
+  }
+
+  console.log("[note] 页面朗读现在会优先请求 /api/tts；失败时自动回退浏览器原生 speechSynthesis。");
 });

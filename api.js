@@ -21,6 +21,15 @@
     });
   }
 
+  function fallbackTtsReply(errorMessage) {
+    return {
+      audioBase64: "",
+      format: "mp3",
+      source: "fallback",
+      error: typeof errorMessage === "string" ? errorMessage : "",
+    };
+  }
+
   function defaultTutorReply(context) {
     if (!context) {
       return withSource(createMessage("先拖几块积木来试试看吧。", "guide", "试试先放一个开始积木。"), "fallback");
@@ -118,6 +127,20 @@
     }, raw && raw.source === "deepseek" ? "deepseek" : "fallback");
   }
 
+  function normalizeTtsReply(raw, fallbackError) {
+    const audioBase64 = raw && typeof raw.audioBase64 === "string" ? raw.audioBase64.trim() : "";
+    const format = raw && typeof raw.format === "string" && raw.format.trim() ? raw.format.trim() : "mp3";
+    const source = raw && raw.source === "doubao" && audioBase64 ? "doubao" : "fallback";
+    const error = raw && typeof raw.error === "string" ? raw.error : (fallbackError || "");
+
+    return {
+      audioBase64: audioBase64,
+      format: format,
+      source: source,
+      error: error,
+    };
+  }
+
   function normalizeHealth(raw, fallbackProvider) {
     return {
       provider: raw && raw.provider ? raw.provider : fallbackProvider,
@@ -131,6 +154,10 @@
 
   function normalizeMode(mode) {
     return isKnownMode(mode) ? mode : DEFAULT_API_MODE;
+  }
+
+  function isAbortError(error) {
+    return Boolean(error && (error.name === "AbortError" || /已取消/.test(error.message || "")));
   }
 
   function isUiReady() {
@@ -177,7 +204,9 @@
     return (global.JimuAppServerBaseUrl || DEFAULT_SERVER_BASE_URL).replace(/\/+$/, "");
   }
 
-  async function fetchJson(path, payload) {
+  async function fetchJson(path, payload, options) {
+    const settings = options || {};
+
     if (typeof global.fetch !== "function") {
       throw new Error("当前浏览器不支持 fetch。请使用现代浏览器打开页面。");
     }
@@ -186,6 +215,20 @@
     const timer = global.setTimeout(function abortRequest() {
       controller.abort();
     }, REQUEST_TIMEOUT_MS);
+    let externalAbortHandler = null;
+
+    if (settings.signal) {
+      if (settings.signal.aborted) {
+        const preAborted = new Error("请求已取消。");
+        preAborted.name = "AbortError";
+        throw preAborted;
+      }
+
+      externalAbortHandler = function onExternalAbort() {
+        controller.abort();
+      };
+      settings.signal.addEventListener("abort", externalAbortHandler, { once: true });
+    }
 
     try {
       const response = await global.fetch(getServerBaseUrl() + path, {
@@ -205,12 +248,21 @@
 
       return response.json();
     } catch (error) {
+      if (settings.signal && settings.signal.aborted) {
+        const aborted = new Error("请求已取消。");
+        aborted.name = "AbortError";
+        throw aborted;
+      }
+
       if (error && error.name === "AbortError") {
         throw new Error("请求超时，请检查本地后端是否已启动。");
       }
       throw error;
     } finally {
       global.clearTimeout(timer);
+      if (settings.signal && externalAbortHandler) {
+        settings.signal.removeEventListener("abort", externalAbortHandler);
+      }
     }
   }
 
@@ -232,6 +284,11 @@
           provider: "mock",
           status: "ready",
         };
+      });
+    },
+    async getTtsAudio() {
+      return withMockBehavior("getTtsAudio", function produceTtsAudio() {
+        return fallbackTtsReply("mock_adapter");
       });
     },
   };
@@ -271,6 +328,25 @@
         };
       }
     },
+    async getTtsAudio(text, options) {
+      try {
+        const raw = await fetchJson("/api/tts", {
+          text: text || "",
+        }, options);
+        return normalizeTtsReply(raw, "");
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw error;
+        }
+
+        safeLog("warn", "远程 TTS 请求失败，已回退本地朗读。", {
+          adapter: "server",
+          message: error.message,
+          baseUrl: getServerBaseUrl(),
+        });
+        return fallbackTtsReply(error.message);
+      }
+    },
   };
 
   const autoAdapter = {
@@ -306,6 +382,25 @@
           provider: "mock",
           status: "fallback",
         };
+      }
+    },
+    async getTtsAudio(text, options) {
+      try {
+        const raw = await fetchJson("/api/tts", {
+          text: text || "",
+        }, options);
+        return normalizeTtsReply(raw, "");
+      } catch (error) {
+        if (isAbortError(error)) {
+          throw error;
+        }
+
+        safeLog("warn", "后端 TTS 不可用，自动回退到本地朗读。", {
+          adapter: "auto",
+          message: error.message,
+          baseUrl: getServerBaseUrl(),
+        });
+        return fallbackTtsReply(error.message);
       }
     },
   };
@@ -485,6 +580,31 @@
     }
   }
 
+  async function getTtsAudio(text, options) {
+    if (!activeAdapter || typeof activeAdapter.getTtsAudio !== "function") {
+      safeLog("warn", "当前适配器缺少 getTtsAudio，已回退本地朗读。", {
+        mode: activeMode,
+        adapter: getActiveAdapterName(),
+      });
+      return fallbackTtsReply("adapter_missing");
+    }
+
+    try {
+      return await activeAdapter.getTtsAudio(text, options || {});
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
+      safeLog("warn", "调用 getTtsAudio 失败，已回退本地朗读。", {
+        mode: activeMode,
+        adapter: getActiveAdapterName(),
+        message: error.message,
+      });
+      return fallbackTtsReply(error.message);
+    }
+  }
+
   const publicApi = {
     setAdapter: setAdapter,
     setMode: setMode,
@@ -494,6 +614,7 @@
     getTutorReply: getTutorReply,
     resolveVoiceIntent: resolveVoiceIntent,
     getHealth: getHealth,
+    getTtsAudio: getTtsAudio,
     getTutorReplySync: getTutorReplySync,
     resolveVoiceIntentSync: resolveVoiceIntentSync,
     mockAdapter: mockAdapter,
